@@ -1,0 +1,683 @@
+\documentclass[]{article}
+\usepackage{amsmath}
+%\usepackage{mhchem}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{relsize}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{decorations.pathreplacing,calc}
+\usetikzlibrary{shapes, positioning}
+\newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
+
+\newcommand*{\AddNote}[4]{%
+	\begin{tikzpicture}[overlay, remember picture]
+		\draw [decoration={brace,amplitude=0.5em},decorate,thick,black]
+		($(#3)!(#1.north)!($(#3)-(0,1)$)$) --  
+		($(#3)!(#2.south)!($(#3)-(0,1)$)$)
+		node [align=center, text width=2.5cm, pos=0.5, anchor=west] {#4};
+	\end{tikzpicture}
+}%
+
+%\usepackage{mathptmx,courier}
+\usepackage[scaled=0.92]{helvet}
+\normalfont
+\usepackage{pifont,tabularx,varioref,url}
+\usepackage[T1]{fontenc}
+\DeclareMathOperator{\adj}{adj}
+\DeclareMathOperator{\A}{\emph{\textbf{A}}}
+\DeclareMathOperator{\B}{\emph{\textbf{B}}}
+\DeclareMathOperator{\rtri}{\triangleright}
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+\newenvironment{lemma}{{\bfseries\textit{Lemma.}}}
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+% Required
+\newcommand{\assignmentQuestionName}{P} % The word to be used as a prefix to question numbers; example alternatives: Problem, Exercise
+%\newcommand{\assignmentClass}{} % Course/class
+\newcommand{\assignmentTitle}{\text{ESO207-TA-2}} % Assignment title or name
+\newcommand{\assignmentAuthorName}{Pathe Nevish Ashok (220757)} % Student name
+
+% Optional (comment lines to remove)
+%\newcommand{\assignmentClassInstructor}{ } % Intructor name/time/description
+%\newcommand{\assignmentDueDate}{ } % Due date
+
+\begin{document}
+	\begin{center}
+		\Large ESO207 Theoretical Assignment 2
+	\end{center}
+	\section{Search Complicated}
+	\stuf{
+		You are given an array $A[0, . . . , n - 1]$ of $n$ distinct integers. The array has following three properties:
+		\begin{itemize}
+		\item First $(n - k)$ elements are such that their value increase to some maximum value and then decreases.
+		\item Last $k$ elements are arranged randomly
+		\item Values of last $k$ elements is smaller compared to the values of first $(n - k)$ elements.
+	\end{itemize}
+	}
+	\answer{
+		\textbf{(a)You are given $q$ queries of the variable Val. For each query, you have to find out if Val
+			is present in the array $A$ or not. Write a pseudo-code for an $\mathcal{O}(k \log(k) + q \log(n))$ time complexity
+			algorithm to do the task.
+			(Higher time complexity correct algorithms will also receive partial credit)}
+	}
+	\stuf{
+		\boxed{\texttt{Motivations:}}
+		\begin{itemize}
+			\item $k \log(k)$ term strongly suggests sorting last $k$ elements
+			\item $\log(n)$ again suggests binary search
+		\end{itemize}
+		\hrule\vspace{4mm}
+		\begin{itemize}
+			\item[$\rtri$] Since, we know that last $k$ elements are arranged randomly, and they are smaller than the first $(n-k)$ elements, we sort them first in decreasing order. Now, the resultant array is such that the elements increase upto some maximum value and then decrease.
+			\item[$\rtri$] As discussed in the lectures, we can find a local maxima in an array in $\mathcal{O}(\log(n))$ time. Also, the only local maxima in this array is the element upto which the elements increase and then decrease. So, we find its index, say $j$.
+			\item[$\rtri$] Given the pseudo-sorted nature of the array, we employ triple binary search.
+
+		\begin{itemize}
+			\item If $\mathbf{Val} < A[0]$ and $\mathbf{Val} < A[n-k-1]$ : \textbf{Val} is smaller than the first $(n-k)$ elements, search in the last $k$.
+			\item If it isn't : Search in the range $[0, j]$. If not present, then search in $[j+1,n-k-1]$. 
+		\end{itemize}
+		\end{itemize}
+	
+			\hrule\vspace{4mm}
+		\boxed{\texttt{Pseudocode:}}
+
+		\begin{algorithmic}
+			\Function{Compli$k$ated-Search}{$q, A, n, k, Val$}
+			\State $A$.\Call{sort}{$n-k, n-1$} 
+			\State $j$ = \Call{Loc-Max}{$A, n$} 
+			\For{$i \to 0, q-1$}
+			\State $print(q, \Call{Find-Val}{A, n, j, k, Val})$
+			\EndFor
+		\end{algorithmic}
+		\dotfill
+
+		\begin{algorithmic}
+
+				\Function{Find-Val}{$A, n, j, k, \text{Val}$}
+				\If{$\text{Val} < A[0]$ \textbf{and} $\text{Val} < A[n-k-1]$}
+				\State $i \gets$ \Call{Bin-Search}{$A, n-k, n-k-1, \text{Val}$}
+				\Else
+				\State $i \gets$ \Call{Bin-Search}{$A, 0, j, \text{Val}$}
+				\If{$i == -1$} 
+				\State $i \gets$ \Call{Bin-Search}{$A, j+1, n-k-1, \text{Val}$} 
+				\EndIf
+				\EndIf
+				
+				\State \Return $i$
+		
+		\end{algorithmic}
+
+		\dotfill
+		\begin{algorithmic}
+			\Function{Loc-Max}{$A, n$}
+			\State $l \gets 0$
+			\State $r \gets n - 1$
+			
+			\While{$l < r$}
+			\State $mid \gets \lfloor \frac{l + r}{2} \rfloor$
+			
+			\If{$A[mid] > A[mid + 1]$}
+			\State $r \gets mid$ \Comment{Potential local maximum on the left side}
+			\Else
+			\State $l \gets mid + 1$ \Comment{Potential local maximum on the right side}
+			\EndIf
+			\EndWhile
+			
+			\State \Return $l$
+		\end{algorithmic}
+		\dotfill
+		\begin{algorithmic}
+			\Function{Bin-Search}{$A, l, r, x$}
+			\While{$l \leq r$}
+			\State $mid \gets \lfloor \frac{l + r}{2} \rfloor$
+			\If{$A[mid] = x$}
+			\State \Return $mid$
+			\EndIf
+			\If{$A[mid] < x$}
+			\State $l \gets mid + 1$
+			\Else
+			\State $r \gets mid - 1$
+			\EndIf
+			\EndWhile
+			\State \Return $-1$
+	\end{algorithmic}
+		
+	}
+	\answer{
+		\textbf{(b) Explain the correctness of your algorithm and give the complete time complexity analysis
+			for your approach in part (a).}
+	}
+	\stuf{
+		We know that for a given sorted array, we can apply binary search and check whether an element exists or not. Now, after sorting the last $k$ elements of original array, we can subdivide the resultant one in three arrays each of them sorted:
+		\begin{itemize}
+			\item $[0:j]$ : sorted in ascending order
+ 			\item $[j:n-k-1]$ : sorted in descending order
+ 			\item $[n-k:n-1]$ : sorted in descending order
+		\end{itemize}\\
+		(We obtain the value of $j$ by finding the local(infact maximum) maxima)\\
+		Thus, we search in these $3$ arrays and return its index if found else return $-1$.\\
+					\hrule\vspace{4mm}
+		
+		\boxed{\texttt{Time Complexity Analysis :}}
+		
+		\begin{algorithmic}
+			\Function{Compli$k$ated-Search}{$q, A, n, k, Val$}
+			\State $A$.\Call{sort}{$n-k, n-1$} \Comment{$\mathcal{O}(k \log (k))$}
+			\For{$i \to 0, q-1$}
+			\State $print(q, \Call{Find-Val}{A, n, j, k, Val})$ \Comment{$\mathcal{O}(\log(n))$}
+			\EndFor
+			\end{algorithmic}
+		\dotfill
+				\begin{algorithmic}
+			
+			
+			
+			\Function{Find-Val}{$A, n, j, k, \text{Val}$}
+
+			
+			\If{$\text{Val} < A[0]$ \textbf{and} $\text{Val} < A[n-k-1]$}
+			\State $i \gets$ \Call{Bin-Search}{$A, n-k, n-1, \text{Val}$}  \Comment{$\mathcal{O}(\log (k))$}
+			\Else
+			\State $i \gets$ \Call{Bin-Search}{$A, 0, j, \text{Val}$} \Comment{$\mathcal{O}(\log (j))$}
+			\If{$i == -1$} 
+			\State $i \gets$ \Call{Bin-Search}{$A, j+1, n-k-1, \text{Val}$} \Comment{$\mathcal{O}(\log (n-k))$}
+			\EndIf
+			\EndIf
+			
+			\State \Return $i$
+			
+		\end{algorithmic}\\
+		Now, $\log (k), \log (n-k), \log(j) \le log(n)$ and in the worst case either of  the three arrays will be searched completely; for a single query, the time complexity is $\log(k) + \log(j) + \log(n-k) = \mathcal{O}(\log(n))$.\\
+		Thus, for $q$ queries, it is $T(n) = q \mathcal{O}(\log(n)) + \log(n) + \mathcal{O}(k \log(k)) = \mathcal{O}(k \log(k) + q \log (n))$
+	
+	}
+	
+	
+	\newpage
+	
+	\section{Perfect Complete Graph}
+	\stuf{
+		A directed graph with n vertices is called Perfect Complete Graph if:
+		\begin{itemize}
+		\item There is exactly one directed edge between every pair of distinct vertices.
+		\item For any three vertices $a, b, c,$ if $(a, b)$ and $(b, c)$ are directed edges, then $(a, c)$ is present in the graph.
+		\end{itemize}
+		\textbf{Note:} Outdegree of a vertex v in a directed graph is the number of edges going out of v
+	}
+	\answer{
+		\textbf{(a) Prove that a directed graph is a Perfect Complete Graph if and only if between any
+			pair of vertices, there is at most one edge, and for all $k \in \{0, 1, . . . , n - 1\}$, there exist a vertex v in the graph, such that $\mathbf{Outdegree}(v) = k$.}
+	}
+	\stuf{
+%		\boxed{\texttt{Motivations:}}
+%		\begin{itemize}
+%			\item $O(n)$ suggests that we may need to process each element atmost a constant number of times
+%			\item This problems draws heavy similarity from the minimum sum subarray problem
+%		\end{itemize}
+%		\hrule\vspace{4mm}
+		$(\impliedby)$\\
+		We start by proving a lemma,\\
+		\begin{lemma}
+			Given a graph with vertices having at most one edge between any pair of vertices, such that for all $k \in \{0, 1, . . . , n - 1\}$, there exist a vertex $v$ in the graph having $\mathbf{Outdegree}(v) = k$, there can exist exactly \textbf{one} edge between any pair of vertices. 
+		\end{lemma}
+		\begin{proof}
+			If $\mathbf{Outdegree}$ of a vertex is $k$, then there exist at least $k$ edges, i.e. in such a graph there are at least (infact exactly) $0 + 1 + 2 + ... + (n-1) = \frac{n(n-1)}{2}$. On the other hand, if we assume exactly one edge between each pair of vertices, we get $\binom{n}{2} = \frac{n(n-1)}{2}$ edges. Thus, even if one edge is absent, the sum fall shorts of.
+		\end{proof}\\\\
+		\begin{lemma}
+			$\mathbf{Indegree}$ of a vertex in a graph with $n$ vertices and exactly one edge between any pairs of vertices can be given by $\mathbf{Indegree}(v) + \mathbf{Outdegree}(v) = (n - 1)$ 
+		\end{lemma}
+		\begin{proof}
+			Except the given vertex, there are $n-1$ other vertices and there exact exactly one edge between any pair of vertices. Thus, the above equation satisfies.
+		\end{proof}\\\\
+		Suppose we are given graph with $n$ vertices such that for all $k \in \{0, 1, . . . , n - 1\}$ there exists a vertex v. Now, we can label the graph such that a vertex $v_k$ denotes that $\mathbf{Outdegree}(v) = k$. Consider $v_0$ which has $\mathbf{Outdegree} = 0$ and $\mathbf{Indegree} = (n-1)$. Thus, it has an incoming edge from all vertices $v_i, i>0$. Now, consider $v_1$ with $\mathbf{Outdegree} = 1$ and $v_0$ has an incoming edge from $v_1$, i.e. $(v_1, v_0)$ is an edge.
+		\\Thus, we invoke Induction here by stating that for a vertex $v_i$, we have outward edges to $v_j, j < i$ and inward edges from $v_k, k > i$.\\
+		Consider $v_{i+1}$, we have an outward edge from $v_{i+1}$ to all $v_m, m \le i$, thus we cannot have inward edges from these vertices. As a result $v_{i+1}$ has all inward edges from $v_p, p > i+1$. \\
+		Thus, for any two vertices $v_i, v_j$ and $i < j \Leftrightarrow $  we have an edge $(v_j, v_i)$. This leads to the second property viz. for $v_i, v_j, v_k$, if we have the edges $(v_k, v_j), (v_j, v_i) \implies k > j > i \implies (v_k, v_i)$ is an edge. Thus proving our claim. \\
+
+		$(\implies)$\\
+		We observed that $0 + 1 + 2 + ... + (n-1) = \frac{n(n-1)}{2} = \binom{n}{2}$. We will use this later. We prove another lemma,\\
+		\begin{lemma}
+			No two vertices can have the same $\mathbf{Outdegree}$ given they follow the two conditions.
+		\end{lemma}
+		\begin{proof}
+			Consider two vertices $u$ and $v$ with the same $\mathbf{Outdegree} = k$. Now, since there can be exactly one edge between $u$ and $v$, consider WLOG we have the directed edge $(u,v)$. Consider the pairs $(u,v)$ and $(v,w)$ where $(v,w)$ are the outward edges from $v$ (also, $w \ne u$, since only one edge), exactly $k$ in number. Thus, by the second condition, we also have the edges $(u,w)$ contributing $k$ to the $\mathbf{Outdegree}$ making total $\mathbf{Outdegree}(u) = (k+1)$ thus contradicting our assumption.
+		\end{proof}\\\\
+		Now, since we have exactly one directed edge between every pair of vertices, total number of edges are $\binom{n}{2}$, and every outward edge is unique, we must have that the total of $\mathbf{Outdegree}$ over all vertices be equal to $\binom{n}{2}$.\\\\
+		Again, we cannot modify the $\mathbf{Outdegrees}$ of vertices while keeping the sum intact, as that would lead to multiple vertices having the same $\mathbf{Outdegree}$ which is not valid as proved in the above lemma. Thus, our claim remains true.
+	}
+	\answer{
+		\textbf{(b) Given the adjacency matrix of a directed graph, design an $\mathcal{O}(n^2)$ algorithm to check
+			if it is a perfect complete graph or not. Show the time complexity analysis. You may use the
+			characterization given in part (a).}
+	}
+	\stuf{
+		\boxed{\texttt{Motivations:}}
+		\begin{itemize}
+			\item Just used the given hint :)
+		\end{itemize}
+		\hrule\vspace{4mm}
+		(We assume no cycles and no parallel edges are present)
+		We use the results obtained in (a), and incorporate the checking of the two properties in our algorithm. We run $2$ loops:
+		\begin{enumerate}
+			\item Checking that $\mathbf{Outdegree}$ of a vertex is in $\{0, 1, 2, ..., n-1\}$
+			\item Checking that there is exactly one edge between all $u$ and $v$
+	\end{enumerate}\\
+				\hrule\vspace{4mm}
+		\boxed{\texttt{Pseudocode:}}
+		\begin{algorithmic}
+			\Function{is-ComPerfect}{$G, n$}
+			\State $od \gets set\{0, 1, 2, ..., n-1\}$
+			\\
+			\For{$i \to 0, n-1$}
+			\State $odsum \gets 0$
+			\For{$j \to 0, n-1$}
+			\State $odsum \gets odsum + G[i][j]$
+			\EndFor
+			\State $od.delete(odsum)$
+ 			\EndFor
+ 			\\
+ 			\If{$!$isEmpty$(od)$}
+ 			\State \Return $-1$
+ 			\EndIf
+			\\
+			\For{$i \to 0, n-1$}
+			\For{$j \to 0, i-1$}
+			\If{ $((G[i][j] + G[j][i])\ \%\ 2) == 0$}
+			\State \Return $-1$
+			\EndIf
+			\EndFor
+			\EndFor
+			\\
+			\State \Return $1$
+		\end{algorithmic}
+		\\ \hrule\vspace{4mm}
+				\newpage
+				\boxed{\texttt{Time Complexity Analysis :}} \\
+
+		\begin{algorithmic}
+			\Function{is-ComPerfect}{$G, n$}
+			\State $od \gets set\{0, 1, 2, ..., n-1\}$
+			\\
+			\For{$i \to 0, n-1$} \tikzmark{t1}
+			\State $odsum \gets 0$
+			\For{$j \to 0, n-1$}
+			\State $odsum \gets odsum + G[i][j]$
+			\EndFor
+			\State $od.delete(odsum)$	\Comment{max $\mathcal{O}(\log n)$}
+			\EndFor \tikzmark{b1}
+			\\
+			\If{$!$isEmpty$(od)$} \Comment{max $\mathcal{O}(\log n)$}
+			\State \Return $-1$
+			\EndIf
+			\\
+			\For{$i \to 0, n-1$} \tikzmark{t2}
+			\For{$j \to 0, i-1$}
+			\If{ $((G[i][j] + G[j][i])\ \%\ 2) == 0$} \tikzmark{l1}
+			\State \Return $-1$
+			\EndIf
+			\EndFor
+			\EndFor	\tikzmark{b2}
+			\\
+			\State \Return $1$
+		\end{algorithmic}
+		\AddNote{t1}{b1}{l1}{$\mathcal{O}(n^2)$}
+		\AddNote{t2}{b2}{l1}{$\mathcal{O}(n^2)$}
+		We can implement the set deletion operation in $\mathcal{O}(1)$ or $\mathcal{O}(\log (n))$ and likewise for the isEmpty() function.\\
+		Thus, the nested loop dominates giving us total $\mathcal{O}(n^2)$ complexity.
+	
+		
+	}
+
+}
+
+\newpage
+
+\section{PnC}
+\stuf{
+	You are given an array $A = [a_1, a_2, a_3, . . . , a_n]$ consisting of $n$ \textbf{distinct, positive} integers. In one
+	operation, you are allowed to swap the elements at any two indices $i$ and $j$ in the \textbf{present array} for a
+	cost of $\max(a_i, a_j)$. You are allowed to use this operation any number of times.\\
+	Let $\Pi$ be a permutation of ${1, 2, . . . , n}$. For an array $A$ of length $n$, let $A(\Pi)$ be the permuted array
+	$A(\Pi) = [a_{\Pi(1)}, a_{\Pi(2)}, . . . , a_{\Pi(n)}]$.\\
+	We define the score of an array $A$ of length $n$ as
+	$$ S(A) = \sum\limits_{i=1}^{i=n-1} |a_{i+1} - a_i| $$
+	
+	
+}
+\answer{
+	\textbf{(a)  Explicitly characterise \textbf{all} the permutations $A(\Pi_0) = [a_{\Pi_0(1)}, a_{\Pi_0(2)}, a_{\Pi_0(3)}, . . . , a_{\Pi_0(n)}]$ of
+		A such that
+		$$S(A(\Pi_0)) = \underset{\min}{\Pi} S(A(\Pi))$$
+		We call such permutations, a \textit{“good permutation”}. In short, a \textit{good permutation} of an array has
+		minimum score over all possible permutations.}
+}
+\stuf{
+%	\boxed{\texttt{Motivations:}}
+	We make the \textit{ansatz} that all the \textit{good permutations} will be monotonic in nature, i.e. either $a_{\Pi_0(i)} < a_{\Pi_0{(i+1)}}$ for $1\le i < n$, or $a_{\Pi_0(i)} > a_{\Pi_0{(i+1)}}$ for $1\le i < n$. Since, all the numbers are distinct, there exist exactly two such permutations (one increasing and the other decreasing).
+
+
+}
+\answer{
+	\textbf{(b)  Provide an algorithm which computes the minimum cost required to transform the
+		given array $A$ into a \textit{good permutation}, $A(\Pi_0)$.\\
+		The cost of a transformation is defined as the sum of costs of each individual operation used in the
+		transformation.\\
+		You will only be awarded full marks if your algorithm works correctly in $\mathcal{O}(n \log n)$ in the worst
+		case, otherwise you will only be awarded partial marks, if at all.}
+}
+\stuf{
+	\boxed{\texttt{Motivations:}}
+	\begin{itemize}
+		\item $\mathcal{O}(n \log n)$ hints either binary search or sorting
+		\item Greediness for minimum cost also hints towards constructing array starting from the largest elements
+	\end{itemize}
+%
+	
+	\hrule\vspace{4mm}
+	We follow the below steps to transform the array into a \textit{good permutation}:
+	\begin{itemize}
+		\item[$\rtri$] Since we want to transform the given array into a sorted one, we store the integers in a new data structure made of pairs of two integers $(a_i, i)$. 
+		\item[$\rtri$] Now, we sort this data structure according to the first key in all the pairs, in both ascending and descending order. 
+		\item[$\rtri$] This gives us the relative positions of the integers and then we construct a new array correspondingly in the following way:\\
+	We create two arrays; with elements sorted in ascending and descending order, and iterate over them from one of the extreme ends (accordingly to construct increasing and decreasing array) and then start adding elements from the sorted array one by one in a decreasing order. 
+	\item[$\rtri$] We increment the cost by the current element(if it is not in the expected position) since any element we swap the current one with is essentially smaller. We also swap the indices of lesser element with the original index of larger element.
+	\item[$\rtri$] Finally, we get the two permutations and all we are left is to compare the costs incurred in constructing those and choosing the cheaper one. (In some sense, we are characterizing how far is our given array far from a sorted one.)
+	\end{itemize}
+	
+	\hrule\vspace{4mm}
+	
+		\boxed{\texttt{Pseudocode:}}\\
+
+\begin{algorithmic}
+	\Function{Good-Perm}{$A, n$}
+	\State $AA = [(,)]_n$
+	\For{$i \to 0, n-1$}
+	\State $AA[i] \gets (a_i, i)$
+	\EndFor
+	\State $A_1 \gets AA.$\Call{sort}{first} \Comment{Sort by first key}
+	\State $A_2 \gets AA.$\Call{sort}{first, >} \Comment{Sort by first key, in descending order}
+	\State $asccost, descost \gets 0, 0$
+	\For{$i \to n-1, 0$} \Comment{Overall $\mathcal{O}(n \log (n))$}
+	\State $j \gets A_1[i].second$
+	\If{$j <> i$}
+	\State $asccost \gets ascost + A_1[i].first$
+	\State $xx \gets $ \Call{Bin-Search}{$A_1, AA[i]$} \Comment{$\mathcal{O}(\log n)$}
+	\State $A_1[xx].second \gets j$
+	\EndIf
+	\EndFor
+	
+	\For{$i \to 0, n-1$} \Comment{Overall $\mathcal{O}(n \log (n))$}
+	\State $j \gets A_2[i].second$
+	\If{$j <> i$}
+	\State $descost \gets descost + A_2[i].first$
+	\State $xx \gets $ \Call{Bin-Search}{$A_2, AA[i]$} \Comment{$\mathcal{O}(\log n)$}
+	\State $A_2[xx].second \gets j$
+	\EndIf
+	\EndFor
+	
+	\State \Return $\min(asccost, descost)$
+\end{algorithmic}
+
+	
+
+}
+\answer{ (c) Bonus: Prove that your algorithm computes the minimum cost of converting any array
+	$A$ into a \textit{good permutation}. }
+\stuf{
+We apply greedy strategy and start constructing the sorted arrays by placing the maximum elements first and then in decreasing order. This ensures the cost, if incurred, is least as each maximum element is counted atmost once (only if a swap is necessary).\\
+Also, if we consider WLOG, $a < b < c$ then $(a,b,c)$ configurations gives $S = b - a + c - b = (c-a)$, while other configuration like $(a,c,b)$ gives $S' = c-a + b -a > S $, also $(b,a,c)$ gives $S'' = b-a + c-a > c-a$. Thus, monotonic nature is needed.
+}
+
+
+\newpage
+
+\section{Mandatory Batman Question}
+\stuf{
+	Batman gives you an undirected, unweighted, connected graph $G = (V, E)$ with $|V | = n$, $|E| = m$, and
+	two vertices $s, t \in V$ .\\
+	He wants to know $dist(s, t)$ given that the edge $(u, v)$ is destroyed, for each edge $(u, v) \in E$. In other
+	words, for each $(u, v) \in E$, he wants to know the distance between $s$ and $t$ in the graph $G' = (V', E')$, where $E' = E\backslash \{(u, v)\}$.
+}
+\answer{
+	\textbf{(a) Batman expects an algorithm that works in $\mathcal{O}(|V | \cdot (|V | + |E|) = \mathcal{O}(n \cdot (n + m))$.}
+}
+\stuf{
+	\boxed{\texttt{Motivations:}}
+	\begin{itemize}
+		\item $\mathcal{O}(|V| + |E|)$ strongly suggests binary search
+		\item $|V|$ factor suggests performing BFS for all vertices (very misleading), or... "almost all vertices"
+	\end{itemize}
+	
+	
+	\hrule\vspace{4mm}
+
+	Since, we want to know $dist(s,t)$ we perform a BFS starting from the vertex $s$. This will help us efficiently find the shortest paths from $s$ to any other vertex in $G$.
+	Now, there can be multiple paths (even shortest) from $s$ to $t$. By BFS, we'd have atleast one such path. We check if the edge $(u,v)$ lies on this path. The dichotomy follows as:
+	\begin{enumerate}
+		\item If $(u, v)$ doesn't lie on this path: Deletion of $(u,v)$ does not affect this path in any way. Choose this. We are done.
+		\item If it lies: Then just delete it and redo BFS from vertex $s$ (since now the graph has become $G'$). Then get a shortest path and its corresponding distance
+	\end{enumerate}
+	Now, in the worst case, it may happen that all of the remaining vertices (except $s$ and $t$) lie on the same shortest path from $s$ to $t$. So we may need to delete the edges corresponding to these vertices $(n-1)$ in total and redo the BFS as many times.\\
+	We get the shortest distance between $s$ and $t$ and the update the matrix $M[u,v]$ for all such edges $(u,v)$.\\
+	
+%	\begin{tikzpicture}[
+%		level/.style={sibling distance=2cm, level distance=1.5cm},
+%		node/.style={circle, draw, fill=blue!30, text centered, minimum width=1.5em}
+%		]
+%		
+%		% Define the nodes
+%		\node [node] (A) {A}
+%		child {node [node] (B) {B}
+%			child {node [node] (C) {C}
+%				child {node [node] (D) {D}}
+%				child {node [node] (E) {E}}
+%			}
+%			child {node [node] (F) {F}
+%				child {node [node] (G) {G}}
+%			}
+%		}
+%		child {node [node] (H) {H}};
+%		
+%	\end{tikzpicture}
+	
+	\hrule\vspace{4mm}
+	
+	\boxed{\texttt{Pseudocode:}}\\
+	\begin{algorithmic}
+		\Function{save-Gotham}{$G, M, n, s, t$}
+		\State $distance, parent \gets$\Call{BFS}{$G,s,n$}
+		\State $v \gets t$
+		\State $r \gets distance[t]$
+		\While{$v <> s$}
+		\State $tfam$.\Call{append}{$v$}
+		\State $v \gets parent[v]$
+		\EndWhile
+		\State $tfam$.\Call{append}{$s$}
+		\For{$u\to 0, n-1$}
+		\For{$v \gets G[u]; v <> \textsc{NULL}; v \gets v.next$}
+		\State $M[u,v] \gets r$
+		\EndFor
+		\EndFor
+		
+		\For{$u\to 1, r-1$}
+		\State $G[tfam[r-u]]$.\Call{delete}{$G[tfam[r-u+1]]$}
+		\State $G[tfam[r-u+1]]$.\Call{delete}{$G[tfam[r-u]]$}
+		\State $distance\_new \gets BFS(G,s)$
+		\State $M[r-u, r-u+1] \gets distance\_new[t]$
+		\State $G[tfam[r-u]]$.\Call{add}{$G[tfam[r-u+1]]$}
+		\State $G[tfam[r-u+1]]$.\Call{add}{$G[tfam[r-u]]$}		
+		\EndFor
+		
+	\end{algorithmic}
+	\dotfill
+	\begin{algorithmic}
+		\Function{BFS}{$G,x,n$}
+		\State Queue $Q$
+		\State $parent \gets []_n$
+		\State $distance \gets [-1]_{n}$
+		\State $distance[x] \gets 0$
+		\State $Q$.enqueue($x$)
+		
+		\While{$!Q$.isEmpty()}
+		\State $v \gets Q$.dequeue()
+		\For{$i \gets G[v]; i <> \textsc{NULL}; i \gets i.next $}
+		\If{$distance[i] \gets -1$}
+		\State $Q$.enqueue($i$)
+		\State $distance[i] \gets distance[v] + 1$
+ 		\State $parent[i] \gets v$
+		\EndIf
+		\EndFor
+		\EndWhile
+		\State \Return $distance, parent$
+	\end{algorithmic}
+	
+}
+\answer{
+	\textbf{(b)  He also wants you to provide him with proof of runtime of your algorithm, i.e., a Time-Complexity Analysis of the algorithm you provide.}
+}
+\stuf{
+		\boxed{\texttt{Time Complexity Analysis :}}\\
+			\begin{algorithmic}
+			\Function{save-Gotham}{$G, M, n, s, t$}
+			
+			\State $distance, parent \gets$\Call{BFS}{$G,s,n$} \Comment{$\mathcal{O}(|V|+|E|)$}
+			\State $v \gets t$
+			\State $r \gets distance[t]$
+			
+			\While{$v <> s$}         \Comment{$\mathcal{O}(|V|)$}
+			\State $tfam$.\Call{append}{$v$}   
+			\State $v \gets parent[v]$
+			\EndWhile
+			\State $tfam$.\Call{append}{$s$}
+			
+			\For{$u\to 0, n-1$} \Comment{$\mathcal{O}(|V|\cdot |E|)$}
+			\For{$v \gets G[u]; v <> \textsc{NULL}; v \gets v.next$}
+			\State $M[u,v] \gets r$
+			\EndFor
+			\EndFor
+			
+			\For{$u\to 1, r-1$}
+			\State $G[tfam[r-u]]$.\Call{delete}{$G[tfam[r-u+1]]$} \Comment{$\mathcal{O}(|V|)$}
+			\State $G[tfam[r-u+1]]$.\Call{delete}{$G[tfam[r-u]]$}
+			\State $distance\_new,p \gets BFS(G,s)$ \Comment{$\mathcal{O}(|V| + |E|)$}
+			\State $M[r-u, r-u+1] \gets distance\_new[t]$
+			\State $G[tfam[r-u]]$.\Call{add}{$G[tfam[r-u+1]]$}
+			\State $G[tfam[r-u+1]]$.\Call{add}{$G[tfam[r-u]]$}		
+			\EndFor
+			
+		\end{algorithmic}
+		BFS takes $\mathcal{O}(|V| + |E|)$ time and we do it maximum for $n-1$ times (when all the $n-2$ vertices other than $s,t$ lie on the same path). Adding and deleting in adjacency list takes $\mathcal{O}(|V|)$ time. Thus, giving us total $T(n) = |V| \cdot  [\mathcal{O}(|V| + |E|) + \mathcal{O}(|V|)] + \mathcal{O}(|V|) + \mathcal{O}(|V|\cdot|E|) \\ = \mathcal{O}(|V|\cdot(|V|+|E|))$
+	
+}
+\answer{
+	\textbf{(c) Lastly, you also need to provide proof of correctness for your algorithm.}
+}
+\stuf{
+	BFS processes the graph layer by layer with increasing distance from the target vertex, and processes each vertex exactly once. Thus, if a vertex is encountered at some distance $d$, it is the shortest distance, otherwise, it would've been visited earlier. \\
+	After the initial BFS from vertex $s$, We identify the vertices which do not lie on the shortest path and hence deleting any edges amongst those has no effect on $dist(s,t)$. Further, for each vertex on the shortest path, we delete the edge between it and the next element, and reperform BFS to get $dist(s,t)$ as required. This new shortest distance inherently satisfies the condition that edge between the two vertices is deleted. Thus, we are able to find $dist(s,t)$ for all the vertices.
+	
+}
+
+
+
+\newpage
+
+\section{No Sugar in this Coat}
+\stuf{
+You are given an \textbf{undirected}, \textbf{unweighted} and \textbf{connected} graph $G = (V, E)$, and a vertex $s \in V$,
+with $|V | = n, |E| = m$ and $n = 3k$ for some integer $k$. Let distance between $u$ and $v$ be denoted by
+$dist(u, v)$ (same definition as that in lectures).\\
+$G$ has the following property:
+\begin{itemize}
+\item  Let $V_d \subseteq V$ be the set of vertices that are at a distance equal to $d$ from $s$ in $G$, then
+\end{itemize}
+$$\forall i \ge 0 : u \in V_i, v \in V_{i+1} \implies (u, v) \in E$$\\
+Provide the following:
+}
+\answer{
+	\textbf{(a) An $\mathcal{O}(|V |+|E|)$ time algorithm to find a vertex $t \in V$ , such that the following property
+		holds for every vertex $u \in V$ :
+		$$min(dist(u, s), dist(u, t)) \le k$$
+		Note that your algorithm can report $s$ as an answer if it satisfies the statement above.}
+}
+\stuf{
+	\boxed{\texttt{Motivations:}}
+	\begin{itemize}
+		\item $\mathcal{O}(|V|+|E|) \Leftrightarrow BFS$	
+	\end{itemize}
+
+
+	\hrule\vspace{4mm}
+	We can start with the BFS traversal of the given graph $G$ from the vertex $s$ and construct a BFS tree ass discussed in the lectures. We can choose any of the vertices in $V_1$ as $t$ for $s$.\\
+	Now, the vertices in the levels $V_i, 1 \le i \le k$ are atmost at a distance of $k$ from the vertex $s$ (since there exists an edge between each pair of vertices in $V_i$ and $V_{i+1}$). \\
+	Thus, for all such $u \in V_i, 1 \le i \le k$, the given condition is satisfied and we report $s$.\\
+	Now, dealing with the vertices $u \in V_i, (k+1) \le i \le 3k$, we can choose a vertex $t$ from either $V_{2k}$ or $V_{2k+1}$ since the maximum distance $dist(u,t) = k$ for the pairs $(V_i, V_j) := (i,j) = (k+1, 2k)$ or $(2k, 3k-1)$\\
+	If, there are no vertices at the $2k$ level, we can choose from $2k-1$ or further up (if not even in $2k-1$) until we can choose a vertex.\\
+	\hrule\vspace{4mm}
+	\boxed{\texttt{Pseudocode:}}\\
+	\begin{algorithmic}
+		\Function{Get-There-Quickly}{$G, n, s$}
+		\State $distance, V \gets BFS(G, n, s)$
+		\State $partner \gets []_{n}$
+		\State $k \gets n/3$
+		\If{$V[2k][0] \gets \textsc{NULL}$}
+		\For{$i \gets 2k; V[i] == \textsc{NULL}; i \gets i - 1 $}  \EndFor
+		\State $g \gets i$
+		\EndIf
+		\State $partner[s] \gets V[1][0]$		
+		\For{$i \to 1, 3k - 1$}
+		\For{$j \gets 0; V[i][j] <> \textsc{NULL}; j \gets i + 1 $}
+		\If{$1 \le i \le k$ and $V[i][j] <> \textsc{NULL}$}
+		\State $partner[V[i][j]] \gets s$
+		\ElsIf{$k+1 \le i < 3k$ and $V[i][j] <> \textsc{NULL}$}
+		\State $partner[V[i][j]] \gets V[g][0]$
+		\EndIf
+		\EndFor
+	\end{algorithmic}
+	
+	\dotfill
+	
+	\begin{algorithmic}
+		\Function{BFS}{$G,x$}
+		\State Queue $Q$
+		\State $V \gets [[]]_n$
+		\State $distance \gets [-1]_{n}$
+		\State $distance[x] \gets 0$
+		\State $Q$.enqueue($x$)
+		
+		\While{$!Q$.isEmpty()}
+		\State $v \gets Q$.dequeue()
+		\For{$i \gets G[v]; i <> \textsc{NULL}; i \gets i.next $}
+		\If{$distance[i] \gets -1$}
+		\State $Q$.enqueue($i$)
+		\State $distance[i] \gets distance[v] + 1$
+		\State $V[distance[i]].append(i)$
+		\EndIf
+		\EndFor
+		\EndWhile
+		\State \Return $distance, V$
+	\end{algorithmic}\\
+	\hrule\vspace{4mm}
+	\boxed{\texttt{Time Complexity Analysis :}}\\
+	\\In BFS, each vertex is processed exactly once and each edge is also processed exactly once giving us $\mathcal{O}(|V| + |E|)$ time complexity.\\
+	Finding the value of $g$ is $\mathcal{O}(n)$ while the another loop surprisingly takes $\mathcal{O}(n)$ too, since we are just processing each vertex exactly once. Thus, giving us the total time complexity $T(n) = \mathcal{O}(|V| + |E|) + \mathcal{O}(|V|) = \mathcal{O}(|V| + |E|)$
+}
+\answer{
+	\textbf{(b) Proof of correctness for your algorithm.}
+}
+\stuf{
+	\boxed{\texttt{Proof of Correctness:}}\\
+	\\BFS give us the shortest distance to any vertex (since if it were further shorter, it would have been visited earlier). We choose any vertex from $V_1$ for $s$. Now, every vertex will either lie in one of the levels $V_i$ and for all those $u$ lying in $V_i, 1 \le i \le k$, distance between $u$ and $s, dist(u,s) = (i-0) \le k$. Thus $t = s$. For rest of the vertices distance between $u$ and $t, dist(u,t) = |g-i|$ where $g \le 2k, k+1 \le i \le 3k-1 \implies (g-i) \in [1-k, k-1] \implies dist(u,t) \le (k-1) \le k$.\\
+	Thus, we could find a vertex $t$ for all the vertices.
+}
+
+
+
+
+\end{document}

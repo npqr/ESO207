@@ -1,0 +1,402 @@
+\documentclass[]{article}
+\usepackage{amsmath}
+%\usepackage{mhchem}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{relsize}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{trees}
+\usetikzlibrary{decorations.pathreplacing,calc}
+\usetikzlibrary{shapes, positioning}
+\newcommand{\tikzmark}[1]{\tikz[overlay,remember picture] \node (#1) {};}
+
+\newcommand*{\AddNote}[4]{%
+	\begin{tikzpicture}[overlay, remember picture]
+		\draw [decoration={brace,amplitude=0.5em},decorate,thick,black]
+		($(#3)!(#1.north)!($(#3)-(0,1)$)$) --  
+		($(#3)!(#2.south)!($(#3)-(0,1)$)$)
+		node [align=center, text width=2.5cm, pos=0.5, anchor=west] {#4};
+	\end{tikzpicture}
+}%
+
+%\usepackage{mathptmx,courier}
+\usepackage[scaled=0.92]{helvet}
+\normalfont
+\usepackage{pifont,tabularx,varioref,url}
+\usepackage[T1]{fontenc}
+\DeclareMathOperator{\adj}{adj}
+\DeclareMathOperator{\A}{\emph{\textbf{A}}}
+\DeclareMathOperator{\B}{\emph{\textbf{B}}}
+\DeclareMathOperator{\rtri}{\triangleright}
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+\newenvironment{lemma}{{\bfseries\textit{Lemma.}}}
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+% Required
+\newcommand{\assignmentQuestionName}{P} % The word to be used as a prefix to question numbers; example alternatives: Problem, Exercise
+%\newcommand{\assignmentClass}{} % Course/class
+\newcommand{\assignmentTitle}{\text{ESO207-TA-3}} % Assignment title or name
+\newcommand{\assignmentAuthorName}{Pathe Nevish Ashok (220757)} % Student name
+
+% Optional (comment lines to remove)
+%\newcommand{\assignmentClassInstructor}{ } % Intructor name/time/description
+%\newcommand{\assignmentDueDate}{ } % Due date
+
+\begin{document}
+	\begin{center}
+		\Large ESO207 Theoretical Assignment 3
+	\end{center}
+\section{All or None}
+	\stuf{(a). \\
+		If only the sequence of nodes is given (without backtracking), it is impossible to recover the graph. \\
+		Even if it is given after backtracking, still cannot recover all the original edges of graph, same with DFS tree. Thus not possible to find a tour with given condition.\\
+		For example, same sequence can correspond to two graphs (cyclic, acyclic).
+	}
+	\stuf{(b). \\
+		If we are again given the sequence of BFS traversal (even with backtracking), it is not possible to recover all edges. This is because the last edge in a cycle simply wont get traversed. \\
+		Since, all edges in BFS tree are in the original graph, but such edges which complete a cycle in original graph may or may not be present in the BFS tree.\\
+		Thus, not possible to find (an Euler) tour.
+	}
+	\stuf{(c). \\
+		We claim that it is possible to traverse each edge exactly once and return back to the starting city iff every vertex has an even degree.\\
+		
+		("Only if" side is trivial since odd number of edges would mean, we either entered that vertex or left that vertex odd number of times, which is not possible for the source vertex, nor for the intermediate vertices.)\\
+		
+		Start with some vertex $v$, we choose an edge and move further (this is always possible since we have even degree i.e. we have a different edge to leave once we enter a vertex). The number of edges being finite, we arrive back at vertex $v$. Let this be a cycle $C$. If all
+		edges are covered then we have found the required tour. 
+		
+		If not, then let the subgraph excluding edges of $C$ be $S$. All the connected components of $S$ will be connected to cycle C (since the graph is connected). Now, we can invoke induction on the number of edges and thus all the connected components of $S$ will also have such tours. Thus, the original graph will also admit such a tour since on the cycle $C$, if we reach a connection point (at which another connected component of $S$ is connected), we complete that tour first and then further complete the cycle $C$.
+	}
+	\stuf{(d). \\
+		We modify our DFS a bit and explore all unvisited edges in each traversal and mark those which are visited, and keep appending those in our (Euler) "tour".
+		Thus, total time complexity is $O(|E|)$ or $O(|V| + |E|)$ if we intend to check if the graph is Eulerian or not.
+		\\
+		\hrule\vspace{4mm}
+		\boxed{\texttt{Pseudocode:}}\\
+	\begin{algorithmic}
+		\Function{DFS}{$u, G, visited\_edge, path$} \Comment{$O(|E|)$}
+		\State \text{tour}.\Call{Append}{$path$}
+		\For{each $v$ in G[u]}
+		\If{$!visited\_edge[u][v]$}
+		\State Set $visited\_edge[u][v]$ and $visited\_edge[v][u]$ to true
+		\State Call \text{DFS}($v, G, visited\_edge, path$)
+		\EndIf
+		\EndFor
+		\State \Return path
+
+	\end{algorithmic}
+\\
+
+	\begin{algorithmic}
+		\Function{GetDegree}{$G$} \Comment{$O(|V| + |E|)$}
+		\State $odd\_deg\_count \gets 0$
+		\State $odd\_node \gets -1$
+		\For{vertex $i$ in $G$}
+		\If{the degree of node $i$ in $G$ is odd}
+		\State Increment $odd\_deg\_count$ by $1$
+		\State Set $odd\_node$ to $i$
+		\EndIf
+		\EndFor
+		\If{$odd\_deg\_count$ is $0$}
+		\State \Return $(1, odd\_node)$
+		\ElsIf{$odd\_deg\_count$ is $2$}
+		\State \Return $(0, odd\_node)$
+		\EndIf
+
+	\end{algorithmic}
+\\\\
+
+	\begin{algorithmic}
+		\Function{CheckEuler}{$G$}  
+		\State $visited\_edge \gets [false]_{n \times n}$
+		\State $check, odd\_node \gets \Call{GetDegree}{$G$}$
+		\If{$check$ is $1$}
+		\State \Call{Print}{"Graph has an Euler tour"}
+		\Else
+		\State \Call{Print}{"Graph has no such tour"}
+		\EndIf
+		\State $path \gets \text{DFS}(start\_node, G, visited\_edge)$
+		\State \Call{Print}{$path$}
+
+	\end{algorithmic}
+	}
+\newpage
+
+\section{Chaotic Dino}
+	\stuf{(a). \\
+		We traverse the graph using BFS for a particular vertex upto $power \gets x$ levels, and then recursively BFS again from those vertices which have towers. Now, if we somehow reach the destination in the process, we are done. We are not actually interested in getting the actual path from source to destination, just to check if that is a possibility. \\
+		Each BFS traversal takes $O(|V| + |E|)$ time and we'd do these traversals max for $n = |V|$ times. Thus, overall time complexity being $O(|V|(|V| + |E|))$.\\
+			\hrule\vspace{4mm}
+		\boxed{\texttt{Pseudocode:}}\\
+		\begin{algorithmic}
+\State $visited = [false]_n$
+\State $master\_queue \gets \text{Queue}()$
+\Function{Tower-reSearch}{$G, S, x, D$}
+ 
+\State $power \gets x$
+\State $queue \gets \text{Queue}()$
+\State $visited[S] \gets \text{True}$
+\State $queue.\text{enqueue}(S)$
+
+\While{$!Q.$isEmpty() and $power \ge 0$}
+\State $node \gets Q.$dequeue()
+\State $power \gets power - 1$
+\For{each neighbour in $G[node]$}
+\If{$neighbour == D$}
+\State \Call{Print}{"Possible"}
+\State return \textbf{true}
+\EndIf
+\If{$!visited[neighbour]$ and \Call{hasTower}{$neighbour$}}
+\State $master\_queue.$enqueue$(neighbour)$
+\EndIf
+\EndFor
+\EndWhile
+\EndFunction
+\\
+
+\Function{Get-Tower}{$G, S, x, D$}
+\While{$!master\_queue.$isEmpty()}
+\State $v \gets master\_queue$.dequeue()
+\If{\Call{Tower-reSearch}{$G, v, x, D$}}
+\State return \textbf{true}
+\EndIf
+\EndWhile
+\State return \textbf{false}
+
+\end{algorithmic}
+	}
+	
+	\stuf{(b). \\
+		We can employ binary search on the value of power, $x$. The minimum and maximum possible values of $x$ are $0$ and the length of longest path from $S$ to $D$ respectively (we may take that as $n$ as well).\\
+		Since again, the \textsc{Tower-reSearch} function acts as a predicate function on the power $x$ i.e. becomes true after a certain minimum power. Thus, we are able to apply binary search. Total time complexity is $O(\log n \cdot |V|(|V|+|E|))$ (log $n$ times that of \textsc{Tower-reSearch})
+			\hrule\vspace{4mm}
+		\boxed{\texttt{Pseudocode:}}\\
+		\begin{algorithmic}
+	\Function{Bin-Search}{$lo, hi, x, n$}
+	\If{!\Call{Tower-reSearch}{$G, S, n, D$}}
+	\State return -1
+	\EndIf
+	\State $lo \gets 0, hi \gets n$
+	\While{$lo \leq hi$}
+	\State $mid \gets \lfloor \frac{lo + hi}{2} \rfloor$
+	\If{$!\Call{Tower-reSearch}{G, S, mid, D}$}
+	\State $hi \gets mid - 1$
+	\Else
+	\State $lo \gets mid + 1$
+	\EndIf
+	\EndWhile
+	\State \Return $hi$
+\end{algorithmic}
+	}
+\newpage
+
+\section{Room Colours}
+\stuf{
+	We create a segment tree with each node on it storing the colour for that particular segment. Nodes are created by dividing the original segment into two halves recursively. \\
+	
+	Range-Assignment takes $O(h)$ where, $h$ is the height of tree where $O(h) = O(\log n)$ (since we are recursively dividing segments into halves). Also, lookup takes $O(\log n)$ time.\\
+	
+	Thus, for $m$ updations ($m$ bombings) and $n$ lookups (for $n$ rooms), we have total time complexity $O((m+n) \log n)$.\\
+	
+	\hrule\vspace{4mm}
+\boxed{\texttt{Pseudocode:}}\\
+		\begin{algorithmic}
+			\Function{PushDown}{$id$}
+			\If{$\text{painted}[id]$}
+			\State $t[2id] = t[2id+1] = t[id]$
+			\State $\text{painted}[2id] = \text{painted}[2id+1] = \text{true}$
+			\State $\text{painted}[id] = \text{false}$
+			\EndIf
+			\EndFunction
+\\
+
+			\Function{Update}{$id, x, y, l, r, c$} \Comment{$O(\log n)$}
+			\If{$l > r$} 
+			\State \Return
+			\EndIf
+			\If{$l == x$ and $y == r$}
+			\State $t[id] = c$
+			\State $\text{painted}[id] = \text{true}$
+			\Else
+			\State \Call{PushDown}{$id$}
+			\State $mid = \frac{x+y}{2}$
+			\State \Call{Update}{$2id, x, mid, l, \min(r, mid), c$}
+			\State \Call{Update}{$2id+1, mid+1, y, \max(l, mid+1), r, c$}
+			\EndIf
+			\EndFunction
+\\
+
+			\Function{WhichColour}{$id, x, y, pos$} \Comment{$O(\log n)$}
+			\If{$x == y$}
+			\State \Return $t[id]$
+			\EndIf
+			\State \Call{PushDown}{$id$}
+			\State $mid = \frac{x+y}{2}$
+			\If{$pos \leq mid$} 
+			\State \Return \Call{WhichColour}{$2id, x, mid, pos$}
+			\Else
+			\State \Return \Call{WhichColour}{$2id+1, mid+1, y, pos$}
+			\EndIf
+			\EndFunction
+\\
+
+			\Function{Bomb-n-Final}{}	\Comment{$O((m+n) \log n)$}
+			\State $painted \gets [false]_{4n}$
+			\State $t \gets [0]_{4n}$
+			\For{$i$ in range$(0, m)$}
+			\State $l, r, c \gets input$
+			\State \Call{Update}{$0, 0, n-1, l, r, c$} \Comment{labelling root node as $0$}
+			\EndFor
+			\State $colour = []_n$
+			\For{$i$ in range$(0, n)$}
+			\State $colour[i] = $ \Call{WhichColour}{$0, 0, n-1, l, r, c$}
+			\EndFor
+		\end{algorithmic}
+}
+
+	\newpage
+
+\section{Fest Fever}
+\stuf{
+	
+	We can keep track of the cost of the sweets in an array and thus a segment tree implemented on it stores the range-sums.\\
+	
+	Range-Updation takes $O(h)$ where, $h$ is the height of tree, and since we are dividing our segments into halves recursively $O(h) = O(\log n)$\\
+	Thus, for $n$ queries, the total time complexity is $O(n \log n)$\\
+	
+		\hrule\vspace{4mm}
+	\boxed{\texttt{Pseudocode:}}\\
+\begin{algorithmic}[0]
+	\Function{BuildTree}{$prices, idx, l, r$} \Comment{$O(4n) = O(n)$}
+	\If{$l == r$}
+	\State $tree[idx] \gets prices[l]$
+	\Else
+	\State $mid \gets \frac{l + r}{2}$
+	\State \Call{BuildTree}{$prices, 2idx + 1, l, mid$}
+	\State \Call{BuildTree}{$prices, 2idx + 2, mid + 1, r$}
+	\State $tree[idx] \gets tree[2idx + 1] + tree[2idx + 2]$
+	\EndIf
+	\EndFunction
+\\
+
+	\Function{Sum-Query}{$idx, l, r, x, y$} \Comment{$O(\log n)$}
+	\If{$x \leq l \textbf{ and } r \leq y$}
+	\State \Return $tree[idx]$
+	\EndIf
+	\If{$r < x \textbf{ or } l > y$}
+	\State \Return $0$
+	\EndIf
+	\State $mid \gets \frac{l + r}{2}$
+	\State $l\_sum \gets \Call{Sum-Query}{2idx + 1, l, mid, x, y}$
+	\State $r\_sum \gets \Call{Sum-Query}{2idx + 2, mid + 1, r, x, y}$
+	\State \Return $l\_sum + r\_sum$
+	\EndFunction
+\\
+
+	\Function{Update}{$idx, l, r, target, val$} \Comment{$O(\log n)$}
+	\If{$l = r = target$}
+	\State $tree[idx] \gets val$
+	\Else
+	\State $mid \gets \frac{(l + r)}{2}$
+	\If{$target \leq mid$}
+	\State \Call{Update}{$2idx + 1, l, mid, target, val$}
+	\Else
+	\State \Call{Update}{$2idx + 2, mid + 1, r, target, val$}
+	\EndIf
+	\State $tree[idx] \gets tree[2idx + 1] + tree[2idx + 2]$
+	\EndIf
+	\EndFunction
+\\
+
+	\Function{Handle-Query}{$a, b, c$} \Comment{$O(\log n)$}
+	\If{$a == 1$}
+	\State $result \gets \Call{Sum-Query}{0, 0, n - 1, b, c}$
+	\If{$result \le M$}
+	\State \Call{Print}{"YES"}
+	\Else
+	\State \Call{Print}{"NO"}
+	\EndIf
+	
+	\ElsIf{$a == 2$}
+	\State \Call{Update}{$0, 0, n - 1, b, c$}
+	\EndIf
+	\EndFunction
+\\
+
+	\Function{Eat-Sweets}{$n$} \Comment{$O(n \log n)$}
+	\State $prices \gets [0]_{4n}$
+	\State \Call{BuildTree}{$prices, 0, 0, n - 1$}
+	\For{$i$ in range$(0, n)$}
+	\State $a, b, c \gets input$
+	\State \Call{Handle-Query}{$a, b, c$}
+	\EndFor
+\end{algorithmic}
+
+
+}
+
+
+
+\newpage
+
+\section{Edible Sequence}
+\stuf{
+	We first run a modified BFS search on the graph and store the parent child relationships in a $n\times n$ matrix, as well as store the child count of a particular node. Now, we keep two pointers $p$ and $q$ where $q$ points to the (probable) child of $p$ and both of them are iterated over the given sequence and are checked if they are infact parent-child ($q$ is iterated as much times as the child count of $p$), if not, we return "Not Edible" else "Edible".\\
+	
+	We are basically checking nodes from consecutive levels in the BFS tree i.e. $V_i, V_{i+1}$ and whether they occur in order i.e. If $2, 3$ occur in this particular order in sequence, then children of $2$ should precede that of $3$ as well.
+	\\
+		\hrule\vspace{4mm}
+	\boxed{\texttt{Pseudocode:}}\\
+\begin{algorithmic}[0]
+	\Function{isSequenceEdible}{$T, \text{sequence}$}
+	\State $n \gets \text{length}(\text{sequence})$
+	\State $parent \gets \{\}$
+	\State $children \gets \{0\}_n$
+	\State $q \gets 1$
+	
+
+	\State $visited \gets \{\}$
+	\State $queue \gets \text{Queue}()$
+	\State $start\_node \gets \text{sequence}[0]$
+	\State $visited[start\_node] \gets \text{True}$
+	\State $queue.\text{enqueue}(start\_node)$
+	\\
+	
+	\While{$!queue.\text{isEmpty}()$} \Comment{(BFS) $O(|V|+|E|) = O(n+n-1) = O(n)$}
+	\State $node \gets queue.\text{dequeue}()$
+	\For{$neighbour \text{ in } T[node]$}
+	\If{$neighbour \text{ not in } visited$}
+	\State $visited[neighbour] \gets \text{True}$
+	\State $queue.\text{enqueue}(neighbour)$
+	\State $parent[node][neighbour] \gets 1$
+	\State $children[node] \gets children[node] + 1$
+	\EndIf
+	\EndFor
+	\EndWhile
+	\\
+
+	\For{$p \text{ in range}(0, n)$} \Comment{$O(n)$}
+	\For{$i \text{ in range}(0, children[\text{sequence}[p]])$}
+	\If{$parent[\text{sequence}[p]][\text{sequence}[q]] \neq 1$}
+	\State \textbf{return} "Not Edible"
+	\Else
+	\State $q \gets q + 1$
+	\EndIf
+	\EndFor
+	\EndFor
+	\\
+	
+	\State \textbf{return} "Edible"
+
+\end{algorithmic}
+}
+
+
+
+
+\end{document}
